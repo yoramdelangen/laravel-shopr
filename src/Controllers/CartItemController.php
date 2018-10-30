@@ -25,14 +25,24 @@ class CartItemController extends Controller
             'shoppable_id'   => 'required'
         ]);
 
-        $this->cart->addItem(
-            $request->shoppable_type,
-            $request->shoppable_id,
-            $request->get('quantity', 1),
-            $request->get('options', []),
-            $request->get('sub_items', []),
-            $request->get('price', null)
-        );
+        $shoppable = (new $request->shoppable_type)->findOrFail($request->shoppable_id);
+
+        $item = $this->cart->newItem($shoppable)
+            ->setQuantity($request->get('quantity'))
+            ->setOptions($request->get('options'))
+            ->setSubItems($request->get('sub_items'))
+            ->setFixedPrice($request->get('price'));
+
+        $this->cart->save($item);
+
+        // $this->cart->addItem(
+        //     $request->shoppable_type,
+        //     $request->shoppable_id,
+        //     $request->get('quantity', 1),
+        //     $request->get('options', []),
+        //     $request->get('sub_items', []),
+        //     $request->get('price', null)
+        // );
 
         return $this->cart->summary();
     }

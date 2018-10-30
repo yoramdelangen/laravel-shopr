@@ -12,8 +12,8 @@ class UpdateCartItemTest extends TestCase
     public function it_updates_the_item_quantity()
     {
         $cart  = app(Cart::class);
-        $model = TestShoppable::first();
-        $item  = $cart->addItem(get_class($model), 1, 1);
+        $item  = $cart->newItem(TestShoppable::first())->setQuantity(1);
+        $cart->save($item);
 
         $this->assertEquals(1, $cart->items()->first()->quantity);
 
@@ -26,14 +26,26 @@ class UpdateCartItemTest extends TestCase
     }
 
     /** @test */
-    public function it_updates_the_cart_totals_correctly()
+    public function it_updates_the_sub_item_total_and_quantity_correctly()
     {
         $cart  = app(Cart::class);
         $model = TestShoppable::first();
-        $item  = $cart->addItem(get_class($model), $model->id, 1, [], [
-            ['shoppable_type' => get_class($model), 'shoppable_id' => 1],
-            ['shoppable_type' => get_class($model), 'shoppable_id' => 1, 'options' => ['color' => 'Green']],
-        ]);
+        $item  = $cart->newItem($model)
+            ->setQuantity(1)
+            ->setSubItems([
+                ['shoppable_type' => get_class($model), 'shoppable_id' => 1],
+                ['shoppable_type' => get_class($model), 'shoppable_id' => 1, 'options' => ['color' => 'Green']],
+            ]);
+        $cart->save($item);
+
+        dd($cart->items()->first());
+
+        // $cart  = app(Cart::class);
+        // $model = TestShoppable::first();
+        // $item  = $cart->addItem(get_class($model), $model->id, 1, [], [
+        //     ['shoppable_type' => get_class($model), 'shoppable_id' => 1],
+        //     ['shoppable_type' => get_class($model), 'shoppable_id' => 1, 'options' => ['color' => 'Green']],
+        // ]);
 
         $response = $this->json('PATCH', 'api/shopr/cart/items/' . $item->id, ['quantity' => 2])
             ->assertStatus(200)

@@ -2,7 +2,7 @@
 
 namespace Happypixels\Shopr\Contracts;
 
-use Happypixels\Shopr\CartItem;
+//use Happypixels\Shopr\CartItem;
 use Illuminate\Support\Collection;
 
 interface Cart
@@ -17,7 +17,11 @@ interface Cart
 
     public function total();
 
-    public function addItem($shoppableType, $shoppableId, $quantity = 1, $options = [], $subItems = [], $price = null) : CartItem;
+    public function newItem(Shoppable $shoppable) : CartItem;
+
+    public function save(CartItem $item) : CartItem;
+
+    //public function addItem($shoppableType, $shoppableId, $quantity = 1, $options = [], $subItems = [], $price = null) : CartItem;
 
     public function updateItem($id, $data);
 

@@ -3,11 +3,13 @@
 namespace Happypixels\Shopr\Repositories;
 
 use Happypixels\Shopr\Contracts\Cart;
-use Happypixels\Shopr\CartItem;
+use Happypixels\Shopr\Contracts\CartItem;
 use Illuminate\Support\Collection;
 use Happypixels\Shopr\Helpers\SessionHelper;
 use Happypixels\Shopr\Models\Order;
 use Happypixels\Shopr\Money\Formatter;
+use Happypixels\Shopr\Contracts\Shoppable;
+use Happypixels\Shopr\Cart\SessionCartItem;
 
 class SessionCartRepository implements Cart
 {
@@ -64,12 +66,14 @@ class SessionCartRepository implements Cart
         return $total;
     }
 
-    public function addItem($shoppableType, $shoppableId, $quantity = 1, $options = [], $subItems = [], $price = null) : CartItem
+    public function newItem(Shoppable $shoppable) : CartItem
     {
-        $quantity = (is_numeric($quantity) && $quantity > 0) ? $quantity : 1;
+        return new SessionCartItem($shoppable);
+    }
 
+    public function save(CartItem $item) : CartItem
+    {
         $items = $this->items();
-        $item  = new CartItem($shoppableType, $shoppableId, $quantity, $options, $subItems, $price);
 
         // Find already added items that are identical to current selection.
         $identicals = $items->filter(function ($row) use ($item) {
@@ -93,6 +97,35 @@ class SessionCartRepository implements Cart
         return $item;
     }
 
+    // public function addItem($shoppableType, $shoppableId, $quantity = 1, $options = [], $subItems = [], $price = null) : CartItem
+    // {
+    //     $quantity = (is_numeric($quantity) && $quantity > 0) ? $quantity : 1;
+
+    //     $items = $this->items();
+    //     $item  = new CartItem($shoppableType, $shoppableId, $quantity, $options, $subItems, $price);
+
+    //     // Find already added items that are identical to current selection.
+    //     $identicals = $items->filter(function ($row) use ($item) {
+    //         return (
+    //             $row->shoppableType === $item->shoppableType &&
+    //             $row->shoppableId === $item->shoppableId &&
+    //             serialize($row->options) === serialize($item->options) &&
+    //             serialize($row->subItems) === serialize($item->subItems)
+    //         );
+    //     });
+
+    //     // If an identical item already exists in the cart, add to it's quantity. Otherwise, push it.
+    //     if ($identicals->count() > 0) {
+    //         $items->where('id', $identicals->first()->id)->first()->quantity += $quantity;
+    //     } else {
+    //         $items->push($item);
+    //     }
+
+    //     $this->session->put($this->cartKey, $items);
+
+    //     return $item;
+    // }
+
     public function updateItem($id, $data)
     {
         $items = $this->items();
@@ -102,16 +135,16 @@ class SessionCartRepository implements Cart
                 continue;
             }
 
-            $items[$index]->quantity = intval($data['quantity']);
+            $items[$index]->setQuantity(intval($data['quantity']));
 
-            if (!empty($items[$index]->subItems)) {
-                foreach ($items[$index]->subItems as $i => $subItem) {
-                    $items[$index]->subItems[$i]->quantity = intval($data['quantity']);
-                    $items[$index]->subItems[$i]->total    = $items[$index]->subItems[$i]->total();
-                }
-            }
+            // if (!empty($items[$index]->subItems)) {
+            //     foreach ($items[$index]->subItems as $i => $subItem) {
+            //         $items[$index]->subItems[$i]->quantity = intval($data['quantity']);
+            //         $items[$index]->subItems[$i]->total    = $items[$index]->subItems[$i]->total();
+            //     }
+            // }
 
-            $items[$index]->total = $items[$index]->total();
+            // $items[$index]->total = $items[$index]->total();
         }
 
         $this->session->put($this->cartKey, $items);
